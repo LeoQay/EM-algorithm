@@ -1,0 +1,457 @@
+\documentclass[10pt]{article}
+
+\usepackage[T2A]{fontenc}
+\usepackage[utf8x]{inputenc}
+
+\usepackage[english,russian]{babel}
+\usepackage{graphics, graphicx}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+
+
+\usepackage[left=20mm, top=20mm, right=20mm, bottom=20mm, nohead, nofoot, footskip=15pt]{geometry}
+
+\usepackage{color}
+\usepackage{epsfig}
+\usepackage{bm}
+\usepackage[colorlinks,urlcolor=blue]{hyperref}
+\usepackage{tikz}
+\usepackage{pgfplots}
+
+\usepackage{setspace}
+
+
+
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+
+\author{Дмитриев Леонид}
+
+\title{Вывод формул EM-алогоритма для задачи выравнивания переводов предложений}
+
+\begin{document}
+	{
+		\LARGE
+		\maketitle
+	}
+
+    { \large \tableofcontents}
+    
+    \clearpage
+
+
+   \section*{Определения}
+   \addcontentsline{toc}{section}{Определения}
+   
+   \begin{itemize}  
+       \item \textbf{A} - список из R векторов латентных переменных (истинных переводов слов целевого языка).  
+       \item \textbf{T} - список из R векторов слов целевого языка.  
+       \item \textbf{S} - список из R векторов слов исходного языка.  
+       \item $m_k$ - длина вектора $T_k$.  
+       \item $n_k$ - длина вектора $S_k$.  
+       \item $\Theta$ - матрица параметров модели $\in \mathbb{R}^{h \times l}$  
+       \item \textbf{h} - размер словаря исходного языка.  
+       \item \textbf{l} - размер словаря целевого языка.  
+       \item $\Theta_{xy} = P(y|x)$ - вероятность того, что переводом слова x с исходного языка на целевой является слово y.  
+       \item $q(A)$ - распределение латентных переменных.  
+       \item $q_k(A_k)$ - распределение латентных переменных для k-ой пары предложений.  
+       \item $q_{ki}(A_{ki})$ - распределение латентных переменных для i слова из целевого предложения k-ой пары предложений.  
+       \item $\Phi_{mn} (j | i) = p(a_i = j | m, n)$ - вероятность того, что в паре предложений с длинами m, n j-ому слову из целевого предложения будет выровнено i-ое слово из исходного.
+    \end{itemize} 
+	
+	
+	\section*{Первая модель}
+	\addcontentsline{toc}{section}{Первая модель}
+	
+	\subsection*{Правдоподобие}
+	\addcontentsline{toc}{subsection}{Правдоподобие предложения}
+	
+	Правдоподобие латентных переменных и предложения на целевом языке в этой модели записывается так:
+	
+	$$
+	p(A_k, T_k | S_k, \Theta) = \prod_{i=1}^{m_k} p(A_{ki}) p(T_{ki} | A_{ki}, S_{k}, \Theta) = \prod_{i=1}^{m_k} \frac{1}{n_k} \theta(T_{ki} | S_{k{A_{ki}}}).
+	$$ 
+	
+	\subsection*{Нижняя оценка логарифма правдоподобия}
+	\addcontentsline{toc}{subsection}{Нижняя оценка логарифма правдоподобия}
+	
+	{
+	
+	
+	\setstretch{2}
+	
+	
+	$$ \mathbb{E}_{q(A)}  \log \frac{P(A, T| S, \Theta)}{q(A)} = \mathbb{E}_{q(A)} \log P(A, T| S, \Theta) - \mathbb{E}_{q(A)} \log q(A)
+	$$
+	
+	
+	$ \mathbb{E}_{q(A)} \log P(A, T| S, \Theta) = \mathbb{E}_{q(A)} \log \prod_{k=1}^R P(A_k, T_k| S_k, \Theta) 
+	= \mathbb{E}_{q(A)} \sum_{k=1}^R \log P(A_k, T_k| S_k, \Theta)
+	= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \log P(A_k, T_k| S_k, \Theta)
+	= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \log \prod_{i=1}^{m_k} P(A_{ki}, T_{ki}| S_k, \Theta)
+	= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \sum_{i=1}^{m_k} \log P(A_{ki}, T_{ki}| S_k, \Theta)
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(A_{ki}, T_{ki}| S_k, \Theta)
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(A_{ki}) P(T_{ki}| A_{ki}, S_k, \Theta)  
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log \frac{1}{n_k} P(T_{ki}| A_{ki}, S_k, \Theta)  
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} (\log \frac{1}{n_k}+\log P(T_{ki}| A_{ki}, S_k, \Theta))
+	= - \sum_{k=1}^R m_k \log n_k + \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(T_{ki}| A_{ki}, S_k, \Theta)
+	$
+	
+	$ \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(T_{ki}| S_{k{A_{ki}}}, \Theta)
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(T_{ki}| S_{k{A_{ki}}}, \Theta)
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log P(T_{ki}| S_{kt}, \Theta)
+	= \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+	$
+	
+	$$ \mathbb{E}_{q(A)} \log q(A) = \sum_{k=1}^{R} \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log q_{ki}(A_{ki}) =
+	\sum_{k=1}^{R} \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log q_{ki}(t) 
+	$$
+	
+
+	\subsubsection*{Итоговая нижняя оценка}
+	\addcontentsline{toc}{subsubsection}{Итоговая нижняя оценка}
+	
+	$$ \mathbb{E}_{q(A)}  \log \frac{P(A, T| S, \Theta)}{q(A)} =  
+	\sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})  
+	- \sum_{k=1}^{R} \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log q_{ki}(t)
+	- \sum_{k=1}^R m_k \log n_k  
+	$$
+	
+    }
+	
+	\subsection*{E-шаг}
+	\addcontentsline{toc}{subsection}{E-шаг}
+	
+	{
+	
+	\setstretch{2}
+	
+	$$ q_{ki}^{\star}(t) = P(t | T, S, \Theta) = P(t | T_{ki}, S_k, \Theta) $$
+	
+	\large
+	
+	$ P(t | T_{ki}, S_k, \Theta)
+	= \frac{P(t, T_{ki} | S_k, \Theta)}{P(T_{ki} | S_k, \Theta)}
+	= \frac{P(t, T_{ki} | S_k, \Theta)}{\sum_{z=1}^{n_k} P(z, T_{ki} | S_k, \Theta)}
+	= \frac{P(t) P(T_{ki} | t, S_k, \Theta)}{\sum_{z=1}^{n_k} P(z) P(T_{ki} | z, S_k, \Theta)}
+	= \frac{P(T_{ki} | t, S_k, \Theta)}{\sum_{z=1}^{n_k} P(T_{ki} | z, S_k, \Theta)}
+	= \frac{P(T_{ki} | S_{kt}, \Theta)}{\sum_{z=1}^{n_k} P(T_{ki} | S_{kz}, \Theta)}
+	= \frac{\Theta (T_{ki} | S_{kt})}{\sum_{z=1}^{n_k} \Theta(T_{ki} | S_{kz})}
+	$
+	
+    }
+	
+	\subsubsection*{Итоговое апостериорное распределение латентных переменных}
+	\addcontentsline{toc}{subsubsection}{Итоговое апостериорное распределение латентных переменных}
+	
+	
+	
+	$$ q_{ki}^{\star}(t) = \frac{\Theta (T_{ki} | S_{kt})}{\sum_{z=1}^{n_k} \Theta(T_{ki} | S_{kz})}
+	$$
+	
+	
+	
+	\subsection*{M-шаг}
+	\addcontentsline{toc}{subsection}{M-шаг}
+	
+	\subsubsection*{Постановка оптимизационной задачи}
+	\addcontentsline{toc}{subsubsection}{Постановка оптимизационной задачи}
+	
+	Оптимизируем по параметрам $\Theta$, поэтому отбрасываем независящие от $\Theta$ слагаемые.  
+	Так как будет использован метод множителей Лагранжа для задачи условной минимизации, а наша задача максимизировать нижнюю оценку логарифма правдоподобия, изменим знак функционала, домножив его на -1. 
+	
+	$$ \mathbb{J} (\Theta) = - \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt}) \rightarrow min $$
+	
+	$$ g_{xy}(\Theta) = -\Theta_{xy} \leq 0, \quad (x, y) \in [1, h] \times [1, l]
+	$$
+	
+	$$ g_x(\Theta) = \sum_{z=1}^{l} \Theta_{xz} - 1 = 0, \quad x \in [1, h]
+	$$
+	
+	
+	\subsubsection*{Функция Лагранжа}
+	\addcontentsline{toc}{subsubsection}{Функция Лагранжа}  
+	
+	Условие Слейтера выполняется (например для случая равномерного распределения вдоль оси целевого языка). Значит $\lambda_0 \ne 0$, поэтому можем нормализовать лямбды так, чтобы $\lambda_0 = 1$. 
+	
+	$$ \mathbb{L}(\Theta, \lambda) = - \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+	- \sum_{x=1}^{h} \sum_{y=1}^{l} \lambda_{xy} \Theta_{xy}
+	+ \sum_{x=1}^{h} \lambda_x (\sum_{z=1}^{l} \Theta_{xz} - 1)
+	$$
+	
+	\subsubsection*{Необходимые условия оптимальной пары $\Theta^{\star}$ и $\lambda^{\star}$}
+	\addcontentsline{toc}{subsubsection}{Необходимые условия оптимальной пары $\Theta^{\star}$ и $\lambda^{\star}$} 
+	
+	$$ \frac{\partial \mathbb{L} (\Theta^{\star}, \lambda^{\star})} {\partial \Theta} = 0
+	$$
+	
+	$$ \lambda_{xy}^{\star} >= 0, \quad (x, y) \in [1, h] \times [1, l], \quad \lambda^{\star} \ne \theta
+	$$
+	
+	$$\lambda_{xy}^{\star} * g_{xy}(\Theta^{\star}) = 0, \quad (x, y) \in [1, h] \times [1, l], \quad \lambda_x^{\star} \star g_{x}(\Theta^{\star}) = 0, \quad x \in [1, h]
+	$$
+	
+	\subsubsection*{Решение системы}
+	\addcontentsline{toc}{subsubsection}{Решение системы} 
+	
+	$  \frac{\partial \mathbb{L} (\Theta, \lambda)} {\partial \Theta_{xy}} =
+	- \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x] [T_{ki} == y] q_{ki}(t) \frac{1}{\Theta(T_{ki} | S_{kt})}
+	- \lambda_{xy} + \lambda_x =\\
+	= - \frac{1}{\Theta_{xy}} \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t)
+	- \lambda_{xy} + \lambda_x$
+	
+	$$ \text{Пусть}
+	\quad K_{xy} =  \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t),
+	$$
+	
+	$$ \text{тогда}
+	\frac{\partial \mathbb{L} (\Theta, \lambda)} {\partial \Theta_{xy}} =
+	\frac{K_{xy}}{\Theta_{xy}} - \lambda_{xy} + \lambda_x
+	$$
+	
+	Для $ (x, y) \in [1, h] \times [1, l] \Rightarrow $\\
+	$$ \lambda_{xy}^{\star} * \Theta_{xy}^{\star} = 0, \quad
+	\frac{\partial \mathbb{L} (\Theta^{\star}, \lambda^{\star})} {\partial \Theta_{xy}} =
+	- \frac{K_{xy}}{\Theta_{xy}^{\star}} - \lambda_{xy}^{\star} + \lambda_{x}^{\star} = 0
+	$$
+	
+	
+	$$ \Rightarrow \lambda_{xy}^{\star} = 0, \quad \Theta_{xy}^{\star} = \frac{K_{xy}} {\lambda_{x}^{\star}}
+	$$
+	
+	Для $ x \in [1, h] \Rightarrow $
+	$$ \sum_{z=1}^{l} \Theta_{xz}^{\star} = \sum_{z=1}^{l}  \frac{K_{xz}} {\lambda_{x}^{\star}} = 
+	\frac{1} {\lambda_{x}^{\star}} \sum_{z=1}^{l} K_{xz} = 1\\
+	\Rightarrow \lambda_{x}^{\star} = \sum_{z=1}^{l} K_{xz}
+	$$
+	
+	
+	В итоге:  
+	$$ \Theta_{xy}^{\star} = \frac{K_{xy}} {\sum_{z=1}^{l} K_{xz}}, \quad (x, y) \in [1, h] \times [1, l],
+	$$
+	
+	$$ \text{где} \quad K_{xy} =  \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t)
+	$$
+	
+	\section*{Вторая модель}
+	\addcontentsline{toc}{section}{Вторая модель}
+	
+	\subsection*{Правдоподобие предложения}
+	\addcontentsline{toc}{subsection}{Правдоподобие предложения}
+	
+	$$
+	p(A_k, T_k | S_k, \Theta) = \prod_{i=1}^{m_k} p(A_{ki} | m, n) p(T_{ki} | A_{ki}, S_{k}, \Theta) = \prod_{i=1}^{m_k} \phi_{mn}(A_{ki} | i) \theta(T_{ki} | S_{k{A_{ki}}}).
+	$$ 
+	
+	\subsection*{Нижняя оценка логарифма правдоподобия}
+	\addcontentsline{toc}{subsection}{Нижняя оценка логарифма правдоподобия}
+	
+	{
+		\setstretch{2}
+		
+		
+		$$ \mathbb{E}_{q(A)}  \log \frac{P(A, T| S, \Theta)}{q(A)} = \mathbb{E}_{q(A)} \log P(A, T| S, \Theta) - \mathbb{E}_{q(A)} \log q(A)
+		$$
+		
+		
+		$ \mathbb{E}_{q(A)} \log P(A, T| S, \Theta) = \mathbb{E}_{q(A)} \log \prod_{k=1}^R P(A_k, T_k| S_k, \Theta) 
+		= \mathbb{E}_{q(A)} \sum_{k=1}^R \log P(A_k, T_k| S_k, \Theta)
+		= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \log P(A_k, T_k| S_k, \Theta)
+		= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \log \prod_{i=1}^{m_k} P(A_{ki}, T_{ki}| S_k, \Theta)
+		= \sum_{k=1}^R \mathbb{E}_{q_k(A_k)} \sum_{i=1}^{m_k} \log P(A_{ki}, T_{ki}| S_k, \Theta)
+		= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(A_{ki}, T_{ki}| S_k, \Theta)
+		= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(A_{ki} | m, n) P(T_{ki}| A_{ki}, S_k, \Theta) 
+		= \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(A_{ki} | m, n)
+		+ \sum_{k=1}^R \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log P(T_{ki}| A_{ki}, S_k, \Theta)
+		= \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log 
+		\Phi_{m_kn_k} (t | i)
+		+ \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+		$
+		
+		$$ \mathbb{E}_{q(A)} \log q(A) = \sum_{k=1}^{R} \sum_{i=1}^{m_k} \mathbb{E}_{q_{ki}(A_{ki})} \log q_{ki}(A_{ki}) =
+		\sum_{k=1}^{R} \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log q_{ki}(t) 
+		$$
+		
+		
+		\subsubsection*{Итоговая нижняя оценка}
+		\addcontentsline{toc}{subsubsection}{Итоговая нижняя оценка}
+		
+		$$ \mathbb{E}_{q(A)}  \log \frac{P(A, T| S, \Theta)}{q(A)} =
+		\sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+		+ \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log 
+		\Phi_{m_kn_k} (t | i)
+		- \sum_{k=1}^{R} \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log q_{ki}(t)
+		$$
+		
+		$$  \mathbb{E}_{q(A)}  \log \frac{P(A, T| S, \Theta)}{q(A)} =
+		\sum_{k=1}^{R} \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \frac{\Phi_{m_kn_k} (t | i) \Theta(T_{ki} | S_{kt})}{q_{ki}(t)}
+		$$
+		
+	}
+	
+	
+	\subsection*{E-шаг}
+	\addcontentsline{toc}{subsection}{E-шаг}
+	
+	{
+		
+		\setstretch{2}
+		
+		$$ q_{ki}^{\star}(t) = P(t | T, S, \Theta) = P(t | T_{ki}, S_k, \Theta) $$
+		
+		\large
+		
+		$ P(t | T_{ki}, S_k, \Theta)
+		= \frac{P(t, T_{ki} | S_k, \Theta)}{P(T_{ki} | S_k, \Theta)}
+		= \frac{P(t, T_{ki} | S_k, \Theta)}{\sum_{z=1}^{n_k} P(z, T_{ki} | S_k, \Theta)}
+		= \frac{P(t | m_k, n_k) P(T_{ki} | t, S_k, \Theta)}{\sum_{z=1}^{n_k} P(z | m_k, n_k) P(T_{ki} | z, S_k, \Theta)}
+		= \frac{\Phi_{m_kn_k} (t | i) \Theta (T_{ki} | S_{kt})}{\sum_{z=1}^{n_k} \Phi_{m_kn_k} (z | i) \Theta(T_{ki} | S_{kz})}
+		$
+		
+	}
+	
+	\subsubsection*{Итоговое апостериорное распределение латентных переменных}
+	\addcontentsline{toc}{subsubsection}{Итоговое апостериорное распределение латентных переменных}
+	
+	$$ q_{ki}^{\star}(t)
+	= \frac{\Phi_{m_kn_k} (t | i) \Theta (T_{ki} | S_{kt})}{\sum_{z=1}^{n_k} \Phi_{m_kn_k} (z | i) \Theta(T_{ki} | S_{kz})}
+	$$
+	
+	
+	
+	\subsection*{M-шаг}
+	\addcontentsline{toc}{subsection}{M-шаг}
+	
+	\subsubsection*{Постановка оптимизационной задачи}
+	\addcontentsline{toc}{subsubsection}{Постановка оптимизационной задачи}
+	
+	Оптимизируем по параметрам $\Theta$ и $\Phi$, поэтому отбрасываем независящие от них слагаемые.  
+	Так как будет использован метод множителей Лагранжа для задачи условной минимизации, а наша задача максимизировать нижнюю оценку логарифма правдоподобия, изменим знак функционала, домножив его на -1.  
+	
+	$$ \mathbb{J} (\Theta, \Phi)
+	= - \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+	- \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log 
+	\Phi_{m_kn_k} (t | i)
+	\rightarrow min $$
+	
+	$$ g_{xy}(\Theta, \Phi) = -\Theta_{xy} \leq 0, \quad (x, y) \in [1, h] \times [1, l]
+	$$
+	
+	$$ g_x(\Theta, \Phi) = \sum_{z=1}^{l} \Theta_{xz} - 1 = 0, \quad x \in [1, h]
+	$$
+	
+	$$ g_{ij}^{mn} (\Theta, \Phi) = -\Phi_{ij}^{mn} \le 0, \quad (m, n) - \text{возможные пары длин предложений в корпусе}, \quad (i, j) \in [1, m] \times [1, n]
+	$$
+	
+	$$ g_{i}^{mn} (\Theta, \Phi) = \sum_{z=1}^{n} \Phi_{iz}^{mn} - 1 = 0, \quad (m, n) - \text{возможные пары длин предложений в корпусе}, \quad i \in [1, m]
+	$$
+	
+	
+	\subsubsection*{Функция Лагранжа}
+	\addcontentsline{toc}{subsubsection}{Функция Лагранжа}  
+	
+	Условие Слейтера выполняется (например для случая равномерного распределения вдоль оси целевого языка в матрице $\Theta$ и равномерного распределения во всех матрицах $\Phi^{mn}$ вдоль оси исходного языка). Значит $\lambda_0 \ne 0$, поэтому можем нормализовать лямбды так, чтобы $\lambda_0 = 1$.\\
+	
+	$ \mathbb{L}(\Theta, \Phi, \lambda) =
+	- \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log \Theta(T_{ki} | S_{kt})
+	- \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} q_{ki}(t) \log 
+	\Phi_{m_kn_k} (t | i)
+	- \sum_{x=1}^{h} \sum_{y=1}^{l} \lambda_{xy} \Theta_{xy}
+	+ \sum_{x=1}^{h} \lambda_x (\sum_{z=1}^{l} \Theta_{xz} - 1)
+	- \sum_{(m, n)} \sum_{i=1}^m \sum_{j=1}^n \lambda_{ij}^{mn} \Phi_{ij}^{mn}
+	+ \sum_{(m, n)} \lambda_{i}^{mn} ( \sum_{z=1}^n \Phi_{iz}^{mn} - 1)
+	$
+	
+	\subsubsection*{Необходимые условия оптимальности $\Theta^{\star}$, $\Phi^{\star}$ и $\lambda^{\star}$}
+	\addcontentsline{toc}{subsubsection}{Необходимые условия оптимальности $\Theta^{\star}$, $\Phi^{\star}$ и $\lambda^{\star}$} 
+	
+	$$ \frac{\partial \mathbb{L} (\Theta^{\star}, \Phi^{\star}, \lambda^{\star})} {\partial \Theta} = \theta
+	$$
+	
+	$$ \frac{\partial \mathbb{L} (\Theta^{\star}, \Phi^{\star}, \lambda^{\star})} {\partial \Phi} = \theta
+	$$
+	
+	$$\lambda^{\star} \ne \theta
+	$$
+	
+	$$ \lambda_{xy}^{\star} \geq 0, \quad (x, y) \in [1, h] \times [1, l]
+	$$
+	
+	$$ \lambda_{xy}^{\star} * g_{xy}(\Theta^{\star}, \Phi^{\star}) = 0, \quad (x, y) \in [1, h] \times [1, l]
+	$$
+	
+	$$ \lambda_x^{\star} \star g_{x}(\Theta^{\star}, \Phi^{\star}) = 0, \quad x \in [1, h]
+	$$
+	
+	$$ {\lambda^{\star}}_{ij}^{mn} \geq 0, \quad (m, n) - \text{возможные пары длин предложений в корпусе}, \quad (i, j) \in [1, m] \times [1, n]
+	$$
+	
+	$$ {\lambda^{\star}}_{ij}^{mn} * g_{ij}^{mn} (\Theta^{\star}, \Phi^{\star}) = 0, \quad (m, n) - \text{возможные пары длин предложений в корпусе}, \quad (i, j) \in [1, m] \times [1, n]
+	$$
+	
+	$$ {\lambda^\star}_{i}^{mn} \star g_{i}^{mn}(\Theta^{\star}, \Phi^{\star}) = 0, \quad (m, n) - \text{возможные пары длин предложений в корпусе}, \quad i \in [1, m]
+	$$
+	
+	
+	\subsubsection*{Решение системы}
+	\addcontentsline{toc}{subsubsection}{Решение системы}
+	
+	$  \frac{\partial \mathbb{L} (\Theta, \lambda)} {\partial \Theta_{xy}} =
+	- \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x] [T_{ki} == y] q_{ki}(t) \frac{1}{\Theta(T_{ki} | S_{kt})}
+	- \lambda_{xy} + \lambda_x =\\
+	= - \frac{1}{\Theta_{xy}} \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t)
+	- \lambda_{xy} + \lambda_x = \frac{K_{xy}}{\Theta_{xy}} - \lambda_{xy} + \lambda_x $
+	
+	$$  K_{xy} = \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t) $$
+	
+	$\frac{\partial \mathbb{L} (\Theta, \lambda)} {\partial \Phi_{ij}^{mn}}
+	= - \frac{1}{\Phi_{ij}^{mn}} \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [m_k==m][n_k==n] q_{ki}(t) - \lambda_{ij}^{mn} + \lambda_{i}^{mn}
+	= - \frac{F_{mn}}{\Phi_{ij}^{mn}} - \lambda_{ij}^{mn} + \lambda_{i}^{mn}
+	$
+	
+	$$ F_{mn} = \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [m_k==m][n_k==n] q_{ki}(t)
+	$$
+	
+	Для $ (x, y) \in [1, h] \times [1, l] \Rightarrow $\\
+	$$ \lambda_{xy}^{\star} * \Theta_{xy}^{\star} = 0, \quad
+	\frac{\partial \mathbb{L} (\Theta^{\star}, \lambda^{\star})} {\partial \Theta_{xy}} =
+	- \frac{K_{xy}}{\Theta_{xy}^{\star}} - \lambda_{xy}^{\star} + \lambda_{x}^{\star} = 0
+	$$
+	
+	$$ \Rightarrow \lambda_{xy}^{\star} = 0, \quad \Theta_{xy}^{\star} = \frac{K_{xy}} {\lambda_{x}^{\star}}
+	$$
+	
+	Для $ x \in [1, h] \Rightarrow $
+	$$ \sum_{z=1}^{l} \Theta_{xz}^{\star} = \sum_{z=1}^{l}  \frac{K_{xz}} {\lambda_{x}^{\star}} = 
+	\frac{1} {\lambda_{x}^{\star}} \sum_{z=1}^{l} K_{xz} = 1\\
+	\Rightarrow \lambda_{x}^{\star} = \sum_{z=1}^{l} K_{xz}
+	$$
+	
+	Аналогично для $ (m, n) - \text{возможные пары длин предложений в корпусе}, \quad (i, j) \in [1, m] \times [1, n] \Rightarrow $
+	
+	$$ {\lambda^{\star}}_{ij}^{mn} = 0,
+	\quad {\lambda^{\star}}_i^{mn} = \sum_{z=1}^n F_{mz},
+	\quad \Phi_{ij}^{mn} = \frac{F_{mn}}{{\lambda^{\star}}_i^{mn}} $$
+	
+	В итоге:  
+	$$ \Theta_{xy}^{\star} = \frac{K_{xy}} {\sum_{z=1}^{l} K_{xz}}, \quad (x, y) \in [1, h] \times [1, l],
+	$$
+	
+	$$ \text{где} \quad K_{xy} =  \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [S_{kt}==x][T_{ki} == y] q_{ki}(t)
+	$$
+	
+	Для $ (m, n) - \text{возможные пары длин предложений в корпусе}, \quad (i, j) \in [1, m] \times [1, n] \Rightarrow $
+	
+	$$ \Phi_{ij}^{mn} = \frac{F_{mn}}{\sum_{z=1}^n F_{mz}},
+	$$
+	
+	$$ \text{где} \quad F_{mn} = \sum_{k=1}^R \sum_{i=1}^{m_k} \sum_{t=1}^{n_k} [m_k==m][n_k==n] q_{ki}(t)
+	$$
+	
+	
+\end{document}
